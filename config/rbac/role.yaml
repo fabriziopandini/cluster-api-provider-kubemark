@@ -1,4 +1,3 @@
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -13,6 +12,9 @@ rules:
   verbs:
   - create
   - delete
+  - get
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -24,9 +26,27 @@ rules:
   - list
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
   - bootstrap.cluster.x-k8s.io
   resources:
   - kubeadmconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusters
   verbs:
   - get
   - list
@@ -50,6 +70,34 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - controlplane.cluster.x-k8s.io
+  resources:
+  - kubemarkcontrolplanes
+  - kubemarkcontrolplanes/status
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - infrastructure.cluster.x-k8s.io
+  resources:
+  - kubemarkclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - infrastructure.cluster.x-k8s.io
+  resources:
+  - kubemarkclusters
+  - kubemarkclusters/status
+  verbs:
+  - get
+  - list
+  - patch
   - watch
 - apiGroups:
   - infrastructure.cluster.x-k8s.io
@@ -91,3 +139,23 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch

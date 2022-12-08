@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.1-0.20201002000720-57250aac17f6
+    controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
   name: kubemarkmachinetemplates.infrastructure.cluster.x-k8s.io
 spec:
@@ -46,6 +45,40 @@ spec:
                     description: Spec is the specification of the desired behavior
                       of the machine.
                     properties:
+                      backingCluster:
+                        description: BackingCluster defined the cluster where to host
+                          the pod running kubemark. If empty, pods running kubemark
+                          will be created in the backing cluster defined in the KubemarkCluster
+                          resource; in case also KubemarkCluster.spec.backingCluster
+                          is empty or if the cluster uses a different infrastructure
+                          cluster kind like e.g. DockerCluster, pods running kubemark
+                          will be created in the management cluster, in the same namespace
+                          of the cluster resource.
+                        properties:
+                          namespace:
+                            description: 'Namespace defines namespace where to host
+                              pods running kubemark. If empty the namespace of the
+                              kubeconfig will be used as a default. Note: it is not
+                              supported using the same backing namespace for two clusters
+                              with the same name.'
+                            type: string
+                          secretRef:
+                            description: 'SecretRef is the reference to a secret with
+                              a `kubeconfig` value providing the kubeconfig for accessing
+                              to the BackingCluster. TODO: document RBAC rules required
+                              to work in the BackingCluster. TODO: consider if to
+                              rename KubeConfigSecretRef TODO: validation (mandatory
+                              if BackingClusterSpec is defined; cannot be changed
+                              if the KubemarkCluster is ready)'
+                            properties:
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
                       extraMounts:
                         description: ExtraMounts describes additional mount points
                           for the node container These may be used to bind a hostPath
@@ -88,9 +121,10 @@ spec:
                           type: object
                         type: array
                       kubemarkHollowPodClusterSecretRef:
-                        description: KubemarkHollowPodClusterSecretRef is a reference
+                        description: 'KubemarkHollowPodClusterSecretRef is a reference
                           to a secret with a kubeconfig for an external cluster used
-                          for kubemark pods.
+                          for kubemark pods. Deprecated: use BackingCluster instead;
+                          if both are defined, BackingCluster takes the precedence.'
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -126,6 +160,7 @@ spec:
                             description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                             type: string
                         type: object
+                        x-kubernetes-map-type: atomic
                       kubemarkOptions:
                         description: KubemarkOptions are API representations of command
                           line flags that will be passed to the `kubemark` binary.
@@ -172,9 +207,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

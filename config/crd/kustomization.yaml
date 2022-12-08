@@ -6,6 +6,10 @@ commonLabels:
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
+- bases/controlplane.cluster.x-k8s.io_kubemarkcontrolplanes.yaml
+- bases/controlplane.cluster.x-k8s.io_kubemarkcontrolplanetemplates.yaml
+- bases/infrastructure.cluster.x-k8s.io_kubemarkclusters.yaml
+- bases/infrastructure.cluster.x-k8s.io_kubemarkclustertemplates.yaml
 - bases/infrastructure.cluster.x-k8s.io_kubemarkmachines.yaml
 - bases/infrastructure.cluster.x-k8s.io_kubemarkmachinetemplates.yaml
 # +kubebuilder:scaffold:crdkustomizeresource

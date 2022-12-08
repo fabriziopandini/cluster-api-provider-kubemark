@@ -20,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha4"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 type KubemarkExtendedResourceName string
@@ -49,7 +49,15 @@ type KubemarkMachineSpec struct {
 	KubemarkOptions KubemarkProcessOptions `json:"kubemarkOptions,omitempty"`
 
 	// KubemarkHollowPodClusterSecretRef is a reference to a secret with a kubeconfig for an external cluster used for kubemark pods.
+	// Deprecated: use BackingCluster instead; if both are defined, BackingCluster takes the precedence.
 	KubemarkHollowPodClusterSecretRef *corev1.ObjectReference `json:"kubemarkHollowPodClusterSecretRef,omitempty"`
+
+	// BackingCluster defined the cluster where to host the pod running kubemark.
+	// If empty, pods running kubemark will be created in the backing cluster defined in the KubemarkCluster resource;
+	// in case also KubemarkCluster.spec.backingCluster is empty or if the cluster uses a different infrastructure cluster kind like
+	// e.g. DockerCluster, pods running kubemark will be created in the management cluster, in the same namespace of the cluster resource.
+	// +optional
+	BackingCluster *BackingClusterSpec `json:"backingCluster,omitempty"`
 }
 
 // Mount specifies a host volume to mount into a container.
@@ -98,6 +106,11 @@ type KubemarkMachineStatus struct {
 
 // +kubebuilder:subresource:status
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="Cluster",type="string",JSONPath=".metadata.labels['cluster\\.x-k8s\\.io/cluster-name']",description="Cluster"
+// +kubebuilder:printcolumn:name="Machine",type="string",JSONPath=".metadata.ownerReferences[?(@.kind==\"Machine\")].name",description="Machine object which owns with this KubemarkMachine"
+// +kubebuilder:printcolumn:name="ProviderID",type="string",JSONPath=".spec.providerID",description="Provider ID"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.ready",description="Machine ready status"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Time duration since creation of DockerMachine"
 
 // KubemarkMachine is the Schema for the kubemarkmachines API
 type KubemarkMachine struct {
@@ -108,12 +121,22 @@ type KubemarkMachine struct {
 	Status KubemarkMachineStatus `json:"status,omitempty"`
 }
 
-func (c *KubemarkMachine) GetConditions() clusterv1.Conditions {
-	return c.Status.Conditions
+func (in *KubemarkMachine) GetBackingCluster() *BackingClusterSpec {
+	if in.Spec.BackingCluster != nil {
+		return in.Spec.BackingCluster
+	}
+	if in.Spec.KubemarkHollowPodClusterSecretRef != nil {
+		return &BackingClusterSpec{SecretRef: corev1.LocalObjectReference{Name: in.Spec.KubemarkHollowPodClusterSecretRef.Name}}
+	}
+	return nil
 }
 
-func (c *KubemarkMachine) SetConditions(conditions clusterv1.Conditions) {
-	c.Status.Conditions = conditions
+func (in *KubemarkMachine) GetConditions() clusterv1.Conditions {
+	return in.Status.Conditions
+}
+
+func (in *KubemarkMachine) SetConditions(conditions clusterv1.Conditions) {
+	in.Status.Conditions = conditions
 }
 
 // +kubebuilder:object:root=true
